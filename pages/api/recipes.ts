@@ -3,77 +3,91 @@
 import fs from 'fs';
 import path from 'path';
 
-const dataFilePath = path.join(process.cwd(), 'data/recipes.json');
+import recipesJson from "@/data/recipes.json"
 
-export default function handler(req, res) {
-  if (req.method === 'GET') {
-    handleGetRequest(req, res);
-  } else if (req.method === 'POST') {
-    handlePostRequest(req, res);
-  } else if (req.method === 'DELETE') {
-    handleDeleteRequest(req, res);
-  } else {
-    res.status(405).json({ message: 'Method Not Allowed' });
-  }
-}
+var recipes = recipesJson;
 
-function handleGetRequest(req, res) {
-  const { id } = req.query;
+import type { NextApiRequest, NextApiResponse } from 'next'
+import { Recipe, Ingredient, ApiData } from '@/lib/types';
 
-  if (id) {
-    const jsonData = readDataFromFile();
-    const recipe = jsonData.find((item) => item.id === Number(id));
 
-    if (recipe) {
-      res.status(200).json(recipe);
-    } else {
-      res.status(404).json({ message: 'Recipe not found' });
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<ApiData>
+) {
+    await sleep(500);
+
+    var id : null | number = null;
+
+    if (req.query.id != null)
+      id = Number(req.query.id);
+
+
+
+    if (req.method == "GET")
+    {
+      if (id != null)
+      {
+        if (recipes.length > id)
+          res.status(200).json({data:recipes[id]})
+        else 
+          res.status(200).json({data:null});
+      }
+      else
+      {
+        res.status(200).json({data:recipes});
+      }
     }
-  } else {
-    const jsonData = readDataFromFile();
-    res.status(200).json(jsonData);
-  }
+    else if (req.method == "POST")
+    {
+      var rec : Recipe | null = null;
+      try {
+        rec = JSON.parse(req.body);
+      } catch (error) {
+        console.log("bad post request");
+      }
+      
+      if (rec)
+      {
+        var idRec = rec.id;
+        if (recipes.length > idRec)
+        {
+          recipes[idRec] = rec;
+          res.status(200).json({data:recipes.length-1});
+        }
+        else
+        {
+          recipes.push(rec);
+          res.status(200).json({data:recipes.length-1});
+        }
+        fs.writeFileSync("./data/recipes.json",JSON.stringify(recipes));
+      }
+      else
+      {
+        res.status(200).json({data:null});
+      }
+      
+    }
+    else if (req.method == "DELETE")
+    {
+      if (id != null)
+      {
+        if (recipes.length > id)
+        {
+          recipes.splice(id,1);
+          res.status(200).json({data:null});
+        }
+          
+      }
+    }
+
+    
 }
 
-function handlePostRequest(req, res) {
-  const { name, description, text, ingredients } = req.body;
 
-  const jsonData = readDataFromFile();
-  const newRecipe = {
-    id: jsonData.length + 1,
-    name,
-    description,
-    text,
-    ingredients,
-  };
-
-  jsonData.push(newRecipe);
-  writeDataToFile(jsonData);
-
-  res.status(201).json(newRecipe);
+function sleep(ms: number) {
+    return new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    });
 }
 
-function handleDeleteRequest(req, res) {
-  const { id } = req.query;
-
-  const jsonData = readDataFromFile();
-  const index = jsonData.findIndex((item) => item.id === Number(id));
-
-  if (index !== -1) {
-    const deletedRecipe = jsonData.splice(index, 1);
-    writeDataToFile(jsonData);
-
-    res.status(200).json(deletedRecipe);
-  } else {
-    res.status(404).json({ message: 'Recipe not found' });
-  }
-}
-
-function readDataFromFile() {
-  const jsonData = fs.readFileSync(dataFilePath, 'utf8');
-  return JSON.parse(jsonData);
-}
-
-function writeDataToFile(data) {
-  fs.writeFileSync(dataFilePath, JSON.stringify(data, null, 2));
-}
