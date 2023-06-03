@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { createStyles, Header, Container, Group, Burger, Paper, Transition, keyframes } from '@mantine/core';
+import { createStyles, Header, Container, Group, Burger, Paper, Transition, keyframes, MediaQuery } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -114,29 +114,16 @@ export function Navbar(/*{ links }: NavbarProps*/) {
   ));*/
 
   return (
-    <Header height={HEADER_HEIGHT} className={classes.headerHolder}>
-      <Container className={classes.header}>
-
-        <Link href='/' /*onClick={() => {setActive('/');if (opened) toggle();}}*/>
-        <Group className={classes.titleHolder} spacing={0}>
-            <h1 style={{color: "#e74646", fontSize: "50px", textShadow: "#333333 0px 0px 10px"}}>Cookbook</h1>
-        </Group>
-        </Link>
-
-        {/*<Group spacing={20} className={classes.links}>
-          {items}
-  </Group>
-
-        <Burger opened={opened} onClick={toggle} className={classes.burger} size="sm" aria-label={"menu"} />
-
-        <Transition transition="fade" duration={100} mounted={opened}>
-          {(styles) => (
-            <Paper className={classes.dropdown} withBorder style={styles}>
-              {items}
-            </Paper>
-          )}
-        </Transition>*/}
-      </Container>
-    </Header>
+    <MediaQuery query='print' styles={{display: 'none'}}>
+      <Header height={HEADER_HEIGHT} className={classes.headerHolder}>
+        <Container className={classes.header}>
+          <Link href='/'>
+          <Group className={classes.titleHolder} spacing={0}>
+              <h1 style={{color: "#e74646", fontSize: "50px", textShadow: "#333333 0px 0px 10px"}}>Cookbook</h1>
+          </Group>
+          </Link>
+        </Container>
+      </Header>
+    </MediaQuery>
   );
 }

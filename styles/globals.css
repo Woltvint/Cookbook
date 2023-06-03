@@ -46,3 +46,16 @@ a {
 .panels {
   background-image: url("/bg2.png");
 }
+
+@media print {
+  .printHide {
+    display: none;
+  }
+
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    color: black !important;
+  }
+}
+

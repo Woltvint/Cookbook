@@ -11,13 +11,10 @@ import {useEffect, useState} from "react"
 import { Router, useRouter } from 'next/router';
 
 export default function Page({recipes} : {recipes : Recipe[]}) {
-
+  const router = useRouter();
   
   const [recipeList,setRecipeList] = useState(recipes);
   const [search,setSearch] = useState("");
-console.log("======================================================================");
-console.log(recipes);
-console.log("======================================================================");
 
   const searchFilter = (rec : Recipe) => {
     var searchWord = search.trim().toLowerCase();
@@ -46,6 +43,13 @@ console.log("===================================================================
     return found;
   }
 
+  const addRecipe = async () => {
+    var rec : Recipe;
+    rec = {id: -1, description: "", ingredients: [], tags: [], text: "", title: "New Recipe"}
+    var data = await (await fetch("https://cookbook.woltvint.net/api/recipes",{method: "POST", body: JSON.stringify(rec)})).json()
+    router.push("https://cookbook.woltvint.net/recipe/" + data.data);
+  }
+
 
   return (
     <>
@@ -55,6 +59,8 @@ console.log("===================================================================
 
       <Container>
         <Input placeholder='Search...' size='xl' classNames={{input: "search"}} value={search} onChange={(e) => setSearch(e.target.value)}/>
+        <br/>
+        <Button onClick={() => addRecipe()} style={{float: "right"}}>Add Recipe</Button>
         <br/><br/>
         <SimpleGrid cols={3} breakpoints={[{maxWidth: "sm", cols: 1}, {maxWidth: "md", cols:2}]} spacing={20}>
           {recipes.filter((rec) => searchFilter(rec)).map((recipe) => 
@@ -75,6 +81,8 @@ console.log("===================================================================
             </Link>
           )}
         </SimpleGrid>
+
+        
       </Container>
     </> 
   )
@@ -82,7 +90,6 @@ console.log("===================================================================
 
 Page.getInitialProps = async (ctx: NextPageContext) => {
   const json : ApiData = await(await fetch("https://cookbook.woltvint.net//api/recipes")).json();
-  //console.log(json);
   const recipes : Recipe[] = json.data;
   return { recipes: [...recipes] }; 
 };

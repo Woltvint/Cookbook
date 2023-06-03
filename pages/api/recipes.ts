@@ -5,7 +5,10 @@ import path from 'path';
 
 import recipesJson from "@/data/recipes.json"
 
-var recipes = recipesJson;
+const emptyRec : Recipe = {id: -1, description: "", ingredients: [], tags: [], text: "", title: "New Recipe"};
+
+var recipes : { [key: number]: Recipe | undefined } = recipesJson;
+
 
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { Recipe, Ingredient, ApiData } from '@/lib/types';
@@ -15,7 +18,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ApiData>
 ) {
-    await sleep(500);
+    //await sleep(500);
 
     var id : null | number = null;
 
@@ -28,14 +31,15 @@ export default async function handler(
     {
       if (id != null)
       {
-        if (recipes.length > id)
+        if (recipes[id] != undefined)
           res.status(200).json({data:recipes[id]})
         else 
           res.status(200).json({data:null});
       }
       else
       {
-        res.status(200).json({data:recipes});
+        var list = Object.keys(recipes).map((k) => recipes[Number(k)] ?? emptyRec);
+        res.status(200).json({data:list});
       }
     }
     else if (req.method == "POST")
@@ -49,17 +53,20 @@ export default async function handler(
       
       if (rec)
       {
-        var idRec = rec.id;
-        if (recipes.length > idRec)
+        if (recipes[rec.id] != undefined)
         {
-          recipes[idRec] = rec;
-          res.status(200).json({data:recipes.length-1});
+          recipes[rec.id] = rec;
+          res.status(200).json({data:rec.id});
         }
         else
         {
-          recipes.push(rec);
-          res.status(200).json({data:recipes.length-1});
+          var key = Math.random() * 10000000;
+
+          rec.id = key;
+          recipes[key] = rec;
+          res.status(200).json({data:key});
         }
+
         fs.writeFileSync("./data/recipes.json",JSON.stringify(recipes));
       }
       else
@@ -72,10 +79,11 @@ export default async function handler(
     {
       if (id != null)
       {
-        if (recipes.length > id)
+        if (recipes[id] != null)
         {
-          recipes.splice(id,1);
+          delete recipes[id];
           res.status(200).json({data:null});
+          fs.writeFileSync("./data/recipes.json",JSON.stringify(recipes));
         }
           
       }

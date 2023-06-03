@@ -1,12 +1,11 @@
-import { Button, Container, Input, TextInput, Textarea , NumberInput, NativeSelect, CloseButton, Group, Divider, Flex, SimpleGrid, Badge, Space } from "@mantine/core";
-import { IconCross } from '@tabler/icons-react';
+import { Button, Container, Input, TextInput, Textarea , NumberInput, NativeSelect, CloseButton, Group, Divider, Flex, SimpleGrid, Badge, Space, MediaQuery } from "@mantine/core";
+
 import Head from "next/head";
 import { Router, useRouter } from "next/router";
 
 import {useEffect, useState} from "react"
 import { NextPageContext } from 'next';
  
-import Link from "next/link";
 
 import { ApiData, Ingredient, Recipe } from "@/lib/types";
 
@@ -20,6 +19,8 @@ export default function Page({ recipe }: { recipe: Recipe }) {
   const [edit,setEdit] = useState(false);
   const [saved,setSaved] = useState(true);
   const [servings, setServings] = useState(1);
+
+  const router = useRouter();
 
   const saveRec = async () => {
     setSaved(false);
@@ -36,6 +37,11 @@ export default function Page({ recipe }: { recipe: Recipe }) {
   const removeTag = (i: number) => {rec.tags.splice(i,1); setRec({...rec});}
   const addTag = () => {rec.tags.push("new-tag"); setRec({...rec});}
 
+  const deleteRecipe = async () => {
+    await fetch("https://cookbook.woltvint.net/api/recipes?id=" + rec.id,{method: "DELETE"});
+    router.push("/");
+  }
+
   return( 
     <>
       <Head>
@@ -43,14 +49,14 @@ export default function Page({ recipe }: { recipe: Recipe }) {
       </Head>
       <br/>
       <Container style={{width: "100%", backgroundColor: "#e74646", padding: "10px 20px", borderRadius: "10px", boxShadow: "0px 0px 500px #555555"}} className={"panels"}>
-        <Button onClick={() => setEdit(!edit)} style={{float: "right"}}>{edit ? "Back" : "Edit"}</Button>
-        <Button onClick={() => setEdit(!edit)} style={{float: "right", margin: "0px 10px"}}>Print</Button>
+          <Button onClick={() => setEdit(!edit)} style={{float: "right"}} className="printHide">{edit ? "Back" : "Edit"}</Button>
+          {edit ? <></> : <Button onClick={() => window.print()} style={{float: "right", margin: "0px 10px"}} className="printHide">Print</Button>}
         {!edit ? 
           <>
             <h1 style={{textAlign: "center"}}>{rec.title}</h1>
-            <Divider color='dark' size={"sm"} />
-            <center  style={{height: "3.5em", overflow: 'hidden'}}>{rec.tags.map((t) => <Badge color="dark" variant='filled'>{t}</Badge>)}</center>
-            <Divider color='dark' size={"sm"} />
+            <Divider color='dark' size={"sm"} className="printHide"/>
+            <center  style={{height: "3.5em", overflow: 'hidden'}} className="printHide">{rec.tags.map((t) => <Badge color="dark" variant='filled'>{t}</Badge>)}</center>
+            <Divider color='dark' size={"sm"} className="printHide"/>
             
             <br/>
             {rec.description.split("\n").map((t) => <p>{t}</p>)}
@@ -65,9 +71,9 @@ export default function Page({ recipe }: { recipe: Recipe }) {
             
             
             <br/>
-            <Divider color='dark' size={"sm"} />
+            <Divider color='dark' size={"sm"} className="printHide"/>
             <Space h={4} />
-            <Divider color='dark' size={"sm"} />
+            <Divider color='dark' size={"sm"} className="printHide"/>
             <h3>Recipe:</h3>
             {rec.text.split("\n").map((t) => {
             t.substring(1,t.length-2)
@@ -95,8 +101,8 @@ export default function Page({ recipe }: { recipe: Recipe }) {
                       <Flex style={{width: "100%",margin:0,padding:0}}>
                         <CloseButton size={"md"} onClick={() => {removeIngredient(i);saveRec();}} color="black"/>
                         <TextInput value={ing.name} onChange={(e) => {setIngredient(i,{...rec.ingredients[i],name: e.target.value})}} style={{}}/>
-                        <NumberInput value={ing.count} onChange={(e) => {setIngredient(i,{...rec.ingredients[i],count: Number(e)});saveRec();}} onInput={() => {}} min={1} style={{minWidth: "4em", maxWidth: "6em"}}/>
-                        <NativeSelect value={ing.unit} onChange={(e) => {setIngredient(i,{...rec.ingredients[i],unit: e.target.value})}} style={{minWidth: "5em", maxWidth: "4em"}} data={[{value: "g", label: "g"},{value: "ml", label: "ml"},{value: "tsp",label: "tsp"},{value: "cup",label: "cup"},{value: " ",label: " "}]}/>
+                        <NumberInput value={ing.count} onChange={(e) => {setIngredient(i,{...rec.ingredients[i],count: Number(e)});saveRec();}} onInput={() => {}} precision={2} min={0.1} style={{minWidth: "4em", maxWidth: "6em"}}/>
+                        <NativeSelect value={ing.unit} onChange={(e) => {setIngredient(i,{...rec.ingredients[i],unit: e.target.value})}} style={{minWidth: "5em", maxWidth: "4em"}} data={[{value: "g", label: "g"},{value: "ml", label: "ml"},{value: "tsp",label: "tsp"},{value: "cup",label: "cup"},{value: "pcs",label: "pcs"},{value: " ",label: " "}]}/>
                       </Flex>
                     )
                   })}
@@ -117,11 +123,12 @@ export default function Page({ recipe }: { recipe: Recipe }) {
                   <Button onClick={() => { addTag(); saveRec(); }}>Add</Button>
                 </Container>
               </SimpleGrid>
-              
+              <Button style={{float: "right"}} color="orange.8" variant="filled" onClick={() => {deleteRecipe();}}>⚠️ Delete ⚠️</Button>
             </Container>
           </>
         }
         <br/>
+        
         <h3 style={{display: saved? "none":"initial", position: "fixed", top: "10px", left: "10px", color: "black"}}>Saving...</h3>
       </Container>
     </>
@@ -133,7 +140,6 @@ export default function Page({ recipe }: { recipe: Recipe }) {
 Page.getInitialProps = async (ctx: NextPageContext) => {
   const id = ctx.query.id??"";
   const json : ApiData = await(await fetch("https://cookbook.woltvint.net//api/recipes?id=" + Number(id))).json();
-  console.log(json);
   return { recipe: {...json.data} };
 };
  
