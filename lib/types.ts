@@ -6,7 +6,7 @@ export type Recipe = {
     ingredients : Ingredient[],
     tags: string[],
     prepTime: number
-  }
+}
   
 export type Ingredient = {
     name: string, 

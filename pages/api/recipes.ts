@@ -1,111 +1,102 @@
-// pages/api/recipes.js
-
 import fs from 'fs';
-import path from 'path';
+import type { NextApiRequest, NextApiResponse } from 'next'
+import { Recipe, ApiData } from '@/lib/types';
 
 import recipesJson from "@/data/recipes.json"
 
 const emptyRec : Recipe = {id: -1, description: "", ingredients: [], tags: [], text: "",prepTime: 0 , title: "New Recipe"};
-
 var recipes : { [key: number]: Recipe | undefined } = recipesJson;
 
 
-import type { NextApiRequest, NextApiResponse } from 'next'
-import { Recipe, Ingredient, ApiData } from '@/lib/types';
+export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiData>) {
+  var id : null | number = null;
 
+  if (req.query.id != null)
+    id = Number(req.query.id);
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<ApiData>
-) {
-    //await sleep(500);
+  if (req.method == "GET")
+  {
+    GetRecipe(req,res,id);
+  }
+  else if (req.method == "POST")
+  {
+    PostRecipe(req,res);
+  }
+  else if (req.method == "DELETE")
+  {
+    DeleteRecipe(req,res,id);
+  }
+}
 
-    var id : null | number = null;
+function GetRecipe(req: NextApiRequest, res: NextApiResponse<ApiData>, id: number | null) 
+{
+  if (id != null)
+  {
+    if (recipes[id] != undefined)
+      res.status(200).json({data:recipes[id], error: ""})
+    else 
+      res.status(404).json({data:null, error: "the recipe with this id does not exits"});
+  }
+  else
+  {
+    var list = Object.keys(recipes).map((k) => recipes[Number(k)] ?? emptyRec);
+    res.status(200).json({data:list, error: ""});
+  }
+}
 
-    if (req.query.id != null)
-      id = Number(req.query.id);
-
-
-
-    if (req.method == "GET")
-    {
-      if (id != null)
-      {
-        if (recipes[id] != undefined)
-          res.status(200).json({data:recipes[id], error: ""})
-        else 
-          res.status(200).json({data:null, error: "the recipe with this id does not exits"});
-      }
-      else
-      {
-        var list = Object.keys(recipes).map((k) => recipes[Number(k)] ?? emptyRec);
-        res.status(200).json({data:list, error: ""});
-      }
+function PostRecipe(req: NextApiRequest, res: NextApiResponse<ApiData>) 
+{
+  var rec : Recipe = emptyRec;
+    try {
+      rec = {...rec, ...(JSON.parse(req.body))};
+    } catch (error) {
+      res.status(400).json({data:null, error: "bad post request body: " + error});
+      return;
     }
-    else if (req.method == "POST")
+
+    rec.title = rec.title.trim();
+    rec.description = rec.description.trim();
+    rec.text = rec.text.trim();
+    
+    for (let i = 0; i < rec.tags.length; i++) {
+      rec.tags[i] = rec.tags[i].trim();
+    }  
+    
+    for (let i = 0; i < rec.ingredients.length; i++) {
+      rec.ingredients[i].name = rec.ingredients[i].name.trim();
+    }  
+
+    if (recipes[rec.id] != undefined)
     {
-      var rec : Recipe = emptyRec;
-      try {
-        rec = {...rec, ...(JSON.parse(req.body))};
-      } catch (error) {
-        console.log("bad post request: " + error);
-        res.status(200).json({data:null, error: "bad post request body: " + error});
-        return;
-      }
+      recipes[rec.id] = rec;
+      res.status(200).json({data:rec.id, error: ""});
+    }
+    else
+    {
+      var key = Math.random() * 10000000;
 
-      rec.title = rec.title.trim();
-      rec.description = rec.description.trim();
-      rec.text = rec.text.trim();
-      
-      for (let i = 0; i < rec.tags.length; i++) {
-        rec.tags[i] = rec.tags[i].trim();
-      }  
-      
-      for (let i = 0; i < rec.ingredients.length; i++) {
-        rec.ingredients[i].name = rec.ingredients[i].name.trim();
-      }  
+      rec.id = key;
+      recipes[key] = rec;
+      res.status(200).json({data:key, error: ""});
+    }
 
-      if (recipes[rec.id] != undefined)
-      {
-        recipes[rec.id] = rec;
-        res.status(200).json({data:rec.id, error: ""});
-      }
-      else
-      {
-        var key = Math.random() * 10000000;
+    fs.writeFileSync("./data/recipes.json",JSON.stringify(recipes));
+}
 
-        rec.id = key;
-        recipes[key] = rec;
-        res.status(200).json({data:key, error: ""});
-      }
-
+function DeleteRecipe(req: NextApiRequest, res: NextApiResponse<ApiData>, id: number | null)
+{
+  if (id != null)
+  {
+    if (recipes[id] != null)
+    {
+      delete recipes[id];
+      res.status(200).json({data:null, error: ""});
       fs.writeFileSync("./data/recipes.json",JSON.stringify(recipes));
     }
-    else if (req.method == "DELETE")
+    else 
     {
-      if (id != null)
-      {
-        if (recipes[id] != null)
-        {
-          delete recipes[id];
-          res.status(200).json({data:null, error: ""});
-          fs.writeFileSync("./data/recipes.json",JSON.stringify(recipes));
-        }
-        else 
-        {
-          res.status(200).json({data:null, error: "the recipe with this id does not exits"});
-        }
-          
-      }
+      res.status(404).json({data:null, error: "the recipe with this id does not exits"});
     }
-
-
+      
+  }
 }
-
-
-function sleep(ms: number) {
-    return new Promise((resolve) => {
-      setTimeout(resolve, ms);
-    });
-}
-

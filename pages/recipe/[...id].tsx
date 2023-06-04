@@ -1,13 +1,14 @@
 import { Button, Container, Input, TextInput, Textarea , NumberInput, NativeSelect, CloseButton, Group, Divider, Flex, SimpleGrid, Badge, Space, MediaQuery } from "@mantine/core";
 
 import Head from "next/head";
-import { Router, useRouter } from "next/router";
+import { useRouter } from "next/router";
 
-import {useEffect, useState} from "react"
+import { useState} from "react"
 import { NextPageContext } from 'next';
  
 import { ApiData, Ingredient, Recipe } from "@/lib/types";
 import debounce from "@/lib/debounce";
+import { baseUrl } from "@/lib/env";
 
 export default function Page({ recipe, loaded }: { recipe: Recipe, loaded: boolean }) {
 
@@ -21,7 +22,7 @@ export default function Page({ recipe, loaded }: { recipe: Recipe, loaded: boole
   const saveRec = debounce(async() => {
     setSaved(false);
     recipe = rec;
-    await fetch("https://cookbook.woltvint.net//api/recipes",{method: "POST", body: JSON.stringify(rec)})
+    await fetch(baseUrl + "api/recipes",{method: "POST", body: JSON.stringify(rec)})
 
     setTimeout(() => setSaved(true),1000);
   });
@@ -35,7 +36,7 @@ export default function Page({ recipe, loaded }: { recipe: Recipe, loaded: boole
   const addTag = () => {rec.tags.push("new-tag"); setRec({...rec});}
 
   const deleteRecipe = async () => {
-    await fetch("https://cookbook.woltvint.net/api/recipes?id=" + rec.id,{method: "DELETE"});
+    await fetch(baseUrl + "api/recipes?id=" + rec.id,{method: "DELETE"});
     router.push("/");
   }
 
@@ -141,7 +142,7 @@ export default function Page({ recipe, loaded }: { recipe: Recipe, loaded: boole
 
 Page.getInitialProps = async (ctx: NextPageContext) => {
   const id = ctx.query.id??"";
-  const json : ApiData = await(await fetch("https://cookbook.woltvint.net//api/recipes?id=" + Number(id))).json();
+  const json : ApiData = await(await fetch(baseUrl + "api/recipes?id=" + Number(id))).json();
   if (json.error == "")
     return { recipe: {...(json.data)}, loaded: true };
   else
@@ -149,7 +150,6 @@ Page.getInitialProps = async (ctx: NextPageContext) => {
     console.log("not found");
     return { recipe: null , loaded: false};
     
-  }
-    
+  } 
 };
  

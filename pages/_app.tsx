@@ -28,7 +28,7 @@ export default function App({ Component, pageProps }: AppProps) {
         <Head>
           <meta name="viewport" content="width=device-width, initial-scale=1" />
         </Head>
-        <Navbar /*links={[{label: "Home", link: "/"}]}*/ />
+        <Navbar/>
         <div className={"container"}>
         <main className={"main"}>
         <Component {...pageProps} />
