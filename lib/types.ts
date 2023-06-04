@@ -4,7 +4,8 @@ export type Recipe = {
     description: string,
     text: string,
     ingredients : Ingredient[],
-    tags: string[]
+    tags: string[],
+    prepTime: number
   }
   
 export type Ingredient = {
@@ -14,5 +15,6 @@ export type Ingredient = {
 }
 
 export type ApiData = {
-    data: any
+    data: any,
+    error: string
 }

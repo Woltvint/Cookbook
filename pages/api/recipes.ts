@@ -5,7 +5,7 @@ import path from 'path';
 
 import recipesJson from "@/data/recipes.json"
 
-const emptyRec : Recipe = {id: -1, description: "", ingredients: [], tags: [], text: "", title: "New Recipe"};
+const emptyRec : Recipe = {id: -1, description: "", ingredients: [], tags: [], text: "",prepTime: 0 , title: "New Recipe"};
 
 var recipes : { [key: number]: Recipe | undefined } = recipesJson;
 
@@ -32,48 +32,54 @@ export default async function handler(
       if (id != null)
       {
         if (recipes[id] != undefined)
-          res.status(200).json({data:recipes[id]})
+          res.status(200).json({data:recipes[id], error: ""})
         else 
-          res.status(200).json({data:null});
+          res.status(200).json({data:null, error: "the recipe with this id does not exits"});
       }
       else
       {
         var list = Object.keys(recipes).map((k) => recipes[Number(k)] ?? emptyRec);
-        res.status(200).json({data:list});
+        res.status(200).json({data:list, error: ""});
       }
     }
     else if (req.method == "POST")
     {
-      var rec : Recipe | null = null;
+      var rec : Recipe = emptyRec;
       try {
-        rec = JSON.parse(req.body);
+        rec = {...rec, ...(JSON.parse(req.body))};
       } catch (error) {
-        console.log("bad post request");
+        console.log("bad post request: " + error);
+        res.status(200).json({data:null, error: "bad post request body: " + error});
+        return;
       }
+
+      rec.title = rec.title.trim();
+      rec.description = rec.description.trim();
+      rec.text = rec.text.trim();
       
-      if (rec)
+      for (let i = 0; i < rec.tags.length; i++) {
+        rec.tags[i] = rec.tags[i].trim();
+      }  
+      
+      for (let i = 0; i < rec.ingredients.length; i++) {
+        rec.ingredients[i].name = rec.ingredients[i].name.trim();
+      }  
+
+      if (recipes[rec.id] != undefined)
       {
-        if (recipes[rec.id] != undefined)
-        {
-          recipes[rec.id] = rec;
-          res.status(200).json({data:rec.id});
-        }
-        else
-        {
-          var key = Math.random() * 10000000;
-
-          rec.id = key;
-          recipes[key] = rec;
-          res.status(200).json({data:key});
-        }
-
-        fs.writeFileSync("./data/recipes.json",JSON.stringify(recipes));
+        recipes[rec.id] = rec;
+        res.status(200).json({data:rec.id, error: ""});
       }
       else
       {
-        res.status(200).json({data:null});
+        var key = Math.random() * 10000000;
+
+        rec.id = key;
+        recipes[key] = rec;
+        res.status(200).json({data:key, error: ""});
       }
-      
+
+      fs.writeFileSync("./data/recipes.json",JSON.stringify(recipes));
     }
     else if (req.method == "DELETE")
     {
@@ -82,14 +88,18 @@ export default async function handler(
         if (recipes[id] != null)
         {
           delete recipes[id];
-          res.status(200).json({data:null});
+          res.status(200).json({data:null, error: ""});
           fs.writeFileSync("./data/recipes.json",JSON.stringify(recipes));
+        }
+        else 
+        {
+          res.status(200).json({data:null, error: "the recipe with this id does not exits"});
         }
           
       }
     }
 
-    
+
 }
 
 

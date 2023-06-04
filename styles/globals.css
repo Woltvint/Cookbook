@@ -51,6 +51,7 @@ a {
   .printHide {
     display: none;
   }
+  .pagebreak { page-break-before: always; }
 
   * {
     box-shadow: none !important;
