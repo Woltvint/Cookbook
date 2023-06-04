@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { Recipe, ApiData } from '@/lib/types';
 
 import recipesJson from "@/data/recipes.json"
+import { IconBrackets } from '@tabler/icons-react';
 
 const emptyRec : Recipe = {id: -1, description: "", ingredients: [], tags: [], text: "",prepTime: 0 , title: "New Recipe"};
 var recipes : { [key: number]: Recipe | undefined } = recipesJson;
@@ -14,18 +15,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   if (req.query.id != null)
     id = Number(req.query.id);
 
-  if (req.method == "GET")
-  {
-    GetRecipe(req,res,id);
-  }
-  else if (req.method == "POST")
-  {
-    PostRecipe(req,res);
-  }
-  else if (req.method == "DELETE")
-  {
-    DeleteRecipe(req,res,id);
-  }
+  switch (req.method) {
+    case "GET":
+      GetRecipe(req,res,id);
+      break;
+    case "POST":
+      PostRecipe(req,res);
+      break;
+    case "DELETE":
+      DeleteRecipe(req,res,id);
+      break;
+  
+    default:
+      res.status(400).json({data:null, error: "bad request"});
+      break;
+    }
 }
 
 function GetRecipe(req: NextApiRequest, res: NextApiResponse<ApiData>, id: number | null) 
